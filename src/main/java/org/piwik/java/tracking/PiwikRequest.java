@@ -512,7 +512,7 @@ public class PiwikRequest {
      * @param key   the parameter's key.  Cannot be null
      * @param value the parameter's value.  Removes the parameter if null
      */
-    public void setCustomTrackingParameter(String key, String value) {
+    public void setCustomTrackingParameter(String key, Object value) {
         if (key == null) {
             throw new NullPointerException("Key cannot be null.");
         }
@@ -533,7 +533,7 @@ public class PiwikRequest {
      * @param key   the parameter's key.  Cannot be null
      * @param value the parameter's value.  Cannot be null
      */
-    public void addCustomTrackingParameter(String key, String value) {
+    public void addCustomTrackingParameter(String key, Object value) {
         if (key == null) {
             throw new NullPointerException("Key cannot be null.");
         }
@@ -1614,8 +1614,18 @@ public class PiwikRequest {
      *
      * @param visitorCustomId the visitor's custom id to set.  A null value will remove this parameter
      */
+    @SuppressWarnings("Duplicates")
     public void setVisitorCustomId(String visitorCustomId) {
-        setVisitorId(visitorCustomId);
+        if (visitorCustomId != null) {
+            if (visitorCustomId.length() != ID_LENGTH) {
+                throw new IllegalArgumentException(visitorCustomId + " is not " + ID_LENGTH + " characters long.");
+            }
+            // Verify visitorID is a 16 character hexadecimal string
+            else if (!VISITOR_ID_PATTERN.matcher(visitorCustomId).matches()) {
+                throw new IllegalArgumentException(visitorCustomId + " is not a hexadecimal string.");
+            }
+        }
+        setParameter(VISITOR_CUSTOM_ID, visitorCustomId);
     }
 
     /**
@@ -1656,6 +1666,7 @@ public class PiwikRequest {
      *
      * @param visitorId the visitor id to set.  A null value will remove this parameter
      */
+    @SuppressWarnings("Duplicates")
     public void setVisitorId(String visitorId) {
         if (visitorId != null) {
             if (visitorId.length() != ID_LENGTH) {
