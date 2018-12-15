@@ -1,67 +1,64 @@
-/* 
+/*
  * Piwik Java Tracker
- * 
+ *
  * @link https://github.com/piwik/piwik-java-tracker
  * @license https://github.com/piwik/piwik-java-tracker/blob/master/LICENSE BSD-3 Clause
  */
 package org.piwik.java.tracking;
 
+import org.junit.*;
+
 import javax.json.JsonValue.ValueType;
-import org.junit.After;
-import org.junit.AfterClass;
+
 import static org.junit.Assert.assertEquals;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
 
 /**
- *
  * @author brettcsorba
  */
-public class EcommerceItemTest{
+public class EcommerceItemTest {
     EcommerceItem ecommerceItem;
-    
-    public EcommerceItemTest(){
+
+    public EcommerceItemTest() {
     }
-    
+
     @BeforeClass
-    public static void setUpClass(){
+    public static void setUpClass() {
     }
-    
+
     @AfterClass
-    public static void tearDownClass(){
+    public static void tearDownClass() {
     }
-    
+
     @Before
-    public void setUp(){
+    public void setUp() {
         ecommerceItem = new EcommerceItem(null, null, null, null, null);
     }
-    
+
     @After
-    public void tearDown(){
+    public void tearDown() {
     }
 
     /**
      * Test of constructor, of class EcommerceItem.
      */
     @Test
-    public void testConstructor(){
+    public void testConstructor() {
         EcommerceItem ecommerceItem = new EcommerceItem("sku", "name", "category", 1.0, 1);
-        
+
         assertEquals("sku", ecommerceItem.getSku());
         assertEquals("name", ecommerceItem.getName());
         assertEquals("category", ecommerceItem.getCategory());
         assertEquals(new Double(1.0), ecommerceItem.getPrice());
         assertEquals(new Integer(1), ecommerceItem.getQuantity());
     }
-    
+
     /**
      * Test of getSku method, of class EcommerceItem.
      */
     @Test
-    public void testGetSku(){
+    public void testGetSku() {
         ecommerceItem.setSku("sku");
-        
+
         assertEquals("sku", ecommerceItem.getSku());
     }
 
@@ -69,9 +66,9 @@ public class EcommerceItemTest{
      * Test of getName method, of class EcommerceItem.
      */
     @Test
-    public void testGetName(){
+    public void testGetName() {
         ecommerceItem.setName("name");
-        
+
         assertEquals("name", ecommerceItem.getName());
     }
 
@@ -79,9 +76,9 @@ public class EcommerceItemTest{
      * Test of getCategory method, of class EcommerceItem.
      */
     @Test
-    public void testGetCategory(){
+    public void testGetCategory() {
         ecommerceItem.setCategory("category");
-        
+
         assertEquals("category", ecommerceItem.getCategory());
     }
 
@@ -89,9 +86,9 @@ public class EcommerceItemTest{
      * Test of getPrice method, of class EcommerceItem.
      */
     @Test
-    public void testGetPrice(){
+    public void testGetPrice() {
         ecommerceItem.setPrice(1.0);
-        
+
         assertEquals(new Double(1.0), ecommerceItem.getPrice());
     }
 
@@ -99,9 +96,9 @@ public class EcommerceItemTest{
      * Test of getQuantity method, of class EcommerceItem.
      */
     @Test
-    public void testGetQuantity(){
+    public void testGetQuantity() {
         ecommerceItem.setQuantity(1);
-        
+
         assertEquals(new Integer(1), ecommerceItem.getQuantity());
     }
 
@@ -109,7 +106,7 @@ public class EcommerceItemTest{
      * Test of getValueType method, of class EcommerceItem.
      */
     @Test
-    public void testGetValueType(){
+    public void testGetValueType() {
         assertEquals(ValueType.ARRAY, ecommerceItem.getValueType());
     }
 
@@ -117,10 +114,10 @@ public class EcommerceItemTest{
      * Test of toString method, of class EcommerceItem.
      */
     @Test
-    public void testToString(){
+    public void testToString() {
         ecommerceItem = new EcommerceItem("sku", "name", "category", 1.0, 1);
-        
+
         assertEquals("[\"sku\",\"name\",\"category\",1.0,1]", ecommerceItem.toString());
     }
-    
+
 }
