@@ -14,7 +14,7 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.util.*;
-import java.util.Map.Entry;
+import java.util.regex.Pattern;
 
 /**
  * A class that implements the <a href="https://developer.piwik.org/api-reference/tracking-api">
@@ -22,6 +22,7 @@ import java.util.Map.Entry;
  *
  * @author brettcsorba
  */
+@SuppressWarnings({"WeakerAccess", "SameParameterValue", "CharsetObjectCanBeUsed"})
 public class PiwikRequest {
     public static final int ID_LENGTH = 16;
     public static final int AUTH_TOKEN_LENGTH = 32;
@@ -97,9 +98,10 @@ public class PiwikRequest {
 
     private static final int RANDOM_VALUE_LENGTH = 20;
     private static final long REQUEST_DATETIME_AUTH_LIMIT = 14400000L;
+    private static final Pattern VISITOR_ID_PATTERN = Pattern.compile("[0-9A-Fa-f]+");
 
     private final Map<String, Object> parameters = new HashMap<>();
-    private final Map<String, List> customTrackingParameters = new HashMap<>();
+    private final Map<String, List<Object>> customTrackingParameters = new HashMap<>();
 
     /**
      * Create a new request from the id of the site being tracked and the full
@@ -489,15 +491,15 @@ public class PiwikRequest {
      * @param key the key of the parameter whose list of objects to get.  Cannot be null
      * @return the list of objects currently stored at the specified key
      */
-    public List getCustomTrackingParameter(String key) {
+    public List<?> getCustomTrackingParameter(String key) {
         if (key == null) {
             throw new NullPointerException("Key cannot be null.");
         }
-        List l = customTrackingParameters.get(key);
+        List<Object> l = customTrackingParameters.get(key);
         if (l == null) {
-            return new ArrayList(0);
+            return new ArrayList<>(0);
         }
-        return new ArrayList(l);
+        return new ArrayList<>(l);
     }
 
     /**
@@ -510,14 +512,14 @@ public class PiwikRequest {
      * @param key   the parameter's key.  Cannot be null
      * @param value the parameter's value.  Removes the parameter if null
      */
-    public void setCustomTrackingParameter(String key, Object value) {
+    public void setCustomTrackingParameter(String key, String value) {
         if (key == null) {
             throw new NullPointerException("Key cannot be null.");
         }
         if (value == null) {
             customTrackingParameters.remove(key);
         } else {
-            List l = new ArrayList();
+            List<Object> l = new ArrayList<>();
             l.add(value);
             customTrackingParameters.put(key, l);
         }
@@ -531,18 +533,14 @@ public class PiwikRequest {
      * @param key   the parameter's key.  Cannot be null
      * @param value the parameter's value.  Cannot be null
      */
-    public void addCustomTrackingParameter(String key, Object value) {
+    public void addCustomTrackingParameter(String key, String value) {
         if (key == null) {
             throw new NullPointerException("Key cannot be null.");
         }
         if (value == null) {
             throw new NullPointerException("Cannot add a null custom tracking parameter.");
         } else {
-            List l = customTrackingParameters.get(key);
-            if (l == null) {
-                l = new ArrayList();
-                customTrackingParameters.put(key, l);
-            }
+            List<Object> l = customTrackingParameters.computeIfAbsent(key, k -> new ArrayList<>());
             l.add(value);
         }
     }
@@ -1617,16 +1615,7 @@ public class PiwikRequest {
      * @param visitorCustomId the visitor's custom id to set.  A null value will remove this parameter
      */
     public void setVisitorCustomId(String visitorCustomId) {
-        if (visitorCustomId != null) {
-            if (visitorCustomId.length() != ID_LENGTH) {
-                throw new IllegalArgumentException(visitorCustomId + " is not " + ID_LENGTH + " characters long.");
-            }
-            // Verify visitorID is a 16 character hexadecimal string
-            else if (!visitorCustomId.matches("[0-9A-Fa-f]+")) {
-                throw new IllegalArgumentException(visitorCustomId + " is not a hexadecimal string.");
-            }
-        }
-        setParameter(VISITOR_CUSTOM_ID, visitorCustomId);
+        setVisitorId(visitorCustomId);
     }
 
     /**
@@ -1673,7 +1662,7 @@ public class PiwikRequest {
                 throw new IllegalArgumentException(visitorId + " is not " + ID_LENGTH + " characters long.");
             }
             // Verify visitorID is a 16 character hexadecimal string
-            else if (!visitorId.matches("[0-9A-Fa-f]+")) {
+            else if (!VISITOR_ID_PATTERN.matcher(visitorId).matches()) {
                 throw new IllegalArgumentException(visitorId + " is not a hexadecimal string.");
             }
         }
@@ -1822,26 +1811,25 @@ public class PiwikRequest {
      * @return the query string represented by this object
      */
 
+    @SuppressWarnings("Duplicates")
     public String getQueryString() {
         StringBuilder sb = new StringBuilder();
-        for (Entry<String, Object> parameter : parameters.entrySet()) {
+        parameters.forEach((key, value) -> {
             if (sb.length() > 0) {
-                sb.append("&");
+                sb.append('&');
             }
-            sb.append(parameter.getKey());
-            sb.append("=");
-            sb.append(parameter.getValue().toString());
-        }
-        for (Entry<String, List> customTrackingParameter : customTrackingParameters.entrySet()) {
-            for (Object o : customTrackingParameter.getValue()) {
-                if (sb.length() > 0) {
-                    sb.append("&");
-                }
-                sb.append(customTrackingParameter.getKey());
-                sb.append("=");
-                sb.append(o.toString());
+            sb.append(key);
+            sb.append('=');
+            sb.append(value.toString());
+        });
+        customTrackingParameters.forEach((key, value) -> value.forEach(o -> {
+            if (sb.length() > 0) {
+                sb.append('&');
             }
-        }
+            sb.append(key);
+            sb.append('=');
+            sb.append(o.toString());
+        }));
 
         return sb.toString();
     }
@@ -1853,37 +1841,34 @@ public class PiwikRequest {
      */
     public String getUrlEncodedQueryString() {
         StringBuilder sb = new StringBuilder();
-        for (Entry<String, Object> parameter : parameters.entrySet()) {
+        parameters.forEach((key, value) -> {
             if (sb.length() > 0) {
-                sb.append("&");
+                sb.append('&');
             }
             try {
                 StringBuilder sb2 = new StringBuilder();
-                sb2.append(parameter.getKey());
-                sb2.append("=");
-                sb2.append(URLEncoder.encode(parameter.getValue().toString(), "UTF-8"));
+                sb2.append(key);
+                sb2.append('=');
+                sb2.append(URLEncoder.encode(value.toString(), "UTF-8"));
                 sb.append(sb2);
             } catch (UnsupportedEncodingException e) {
                 System.err.println(e.getMessage());
             }
-        }
-        for (Entry<String, List> customTrackingParameter : customTrackingParameters.entrySet()) {
-            for (Object o : customTrackingParameter.getValue()) {
-                if (sb.length() > 0) {
-                    sb.append("&");
-                }
-                try {
-                    StringBuilder sb2 = new StringBuilder();
-                    sb2.append(URLEncoder.encode(customTrackingParameter.getKey(), "UTF-8"));
-                    sb2.append("=");
-                    sb2.append(URLEncoder.encode(o.toString(), "UTF-8"));
-                    sb.append(sb2);
-                } catch (UnsupportedEncodingException e) {
-                    System.err.println(e.getMessage());
-                }
+        });
+        customTrackingParameters.forEach((key, value) -> value.forEach(o -> {
+            if (sb.length() > 0) {
+                sb.append('&');
             }
-        }
-
+            try {
+                StringBuilder sb2 = new StringBuilder();
+                sb2.append(URLEncoder.encode(key, "UTF-8"));
+                sb2.append('=');
+                sb2.append(URLEncoder.encode(o.toString(), "UTF-8"));
+                sb.append(sb2);
+            } catch (UnsupportedEncodingException e) {
+                System.err.println(e.getMessage());
+            }
+        }));
         return sb.toString();
     }
 
@@ -1969,13 +1954,6 @@ public class PiwikRequest {
         }
     }
 
-    /**
-     * Get a value that is stored in a json object at the specified parameter.
-     *
-     * @param parameter the parameter to retrieve the json object from
-     * @param key       the key of the value.  Cannot be null
-     * @return the value
-     */
     private CustomVariable getCustomVariable(String parameter, int index) {
         CustomVariableList cvl = (CustomVariableList) parameters.get(parameter);
         if (cvl == null) {
@@ -1998,13 +1976,6 @@ public class PiwikRequest {
         return cvl.get(key);
     }
 
-    /**
-     * Store a value in a json object at the specified parameter.
-     *
-     * @param parameter the parameter to store the json object at
-     * @param key       the key of the value.  Cannot be null
-     * @param value     the value.  Removes the parameter if null
-     */
     private void setCustomVariable(String parameter, CustomVariable customVariable, Integer index) {
         CustomVariableList cvl = (CustomVariableList) parameters.get(parameter);
         if (cvl == null) {

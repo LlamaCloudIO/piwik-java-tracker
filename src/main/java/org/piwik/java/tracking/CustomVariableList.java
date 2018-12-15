@@ -10,7 +10,6 @@ import javax.json.Json;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonObjectBuilder;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -53,14 +52,7 @@ class CustomVariableList {
     }
 
     String get(String key) {
-        Iterator<Entry<Integer, CustomVariable>> i = map.entrySet().iterator();
-        while (i.hasNext()) {
-            CustomVariable value = i.next().getValue();
-            if (value.getKey().equals(key)) {
-                return value.getValue();
-            }
-        }
-        return null;
+        return map.values().stream().filter(value -> value.getKey().equals(key)).findFirst().map(CustomVariable::getValue).orElse(null);
     }
 
     void remove(int index) {
@@ -68,13 +60,7 @@ class CustomVariableList {
     }
 
     void remove(String key) {
-        Iterator<Entry<Integer, CustomVariable>> i = map.entrySet().iterator();
-        while (i.hasNext()) {
-            Entry<Integer, CustomVariable> entry = i.next();
-            if (entry.getValue().getKey().equals(key)) {
-                i.remove();
-            }
-        }
+        map.entrySet().removeIf(entry -> entry.getValue().getKey().equals(key));
     }
 
     boolean isEmpty() {
@@ -85,12 +71,12 @@ class CustomVariableList {
     public String toString() {
         JsonObjectBuilder ob = Json.createObjectBuilder();
 
-        for (Entry<Integer, CustomVariable> entry : map.entrySet()) {
+        map.forEach((key, value) -> {
             JsonArrayBuilder ab = Json.createArrayBuilder();
-            ab.add(entry.getValue().getKey());
-            ab.add(entry.getValue().getValue());
-            ob.add(entry.getKey().toString(), ab);
-        }
+            ab.add(value.getKey());
+            ab.add(value.getValue());
+            ob.add(key.toString(), ab);
+        });
 
         return ob.build().toString();
     }
