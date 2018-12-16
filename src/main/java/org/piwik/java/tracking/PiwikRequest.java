@@ -23,7 +23,7 @@ import java.util.regex.Pattern;
  * @author brettcsorba
  */
 @SuppressWarnings({"WeakerAccess", "SameParameterValue", "CharsetObjectCanBeUsed"})
-public class PiwikRequest {
+public class PiwikRequest implements Cloneable {
     public static final int ID_LENGTH = 16;
     public static final int AUTH_TOKEN_LENGTH = 32;
 
@@ -1881,6 +1881,29 @@ public class PiwikRequest {
             }
         }));
         return sb.toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof PiwikRequest)) return false;
+        PiwikRequest that = (PiwikRequest) o;
+        return Objects.equals(parameters, that.parameters) &&
+                Objects.equals(customTrackingParameters, that.customTrackingParameters);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = parameters != null ? parameters.hashCode() : 0;
+        result = 31 * result + (customTrackingParameters != null ? customTrackingParameters.hashCode() : 0);
+        return result;
+    }
+
+    public PiwikRequest clone() {
+        PiwikRequest clone = new PiwikRequest(getSiteId(), getActionUrl());
+        this.parameters.forEach(clone.parameters::put);
+        this.customTrackingParameters.forEach(clone.customTrackingParameters::put);
+        return clone;
     }
 
     /**

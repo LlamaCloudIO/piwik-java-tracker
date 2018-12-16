@@ -1581,4 +1581,10 @@ public class PiwikRequestTest {
         assertEquals(10, s.length());
         Long.parseLong(s, 16);
     }
+
+    @Test
+    public void testClone() {
+        PiwikRequest clone = request.clone();
+        assertEquals(request, clone);
+    }
 }
